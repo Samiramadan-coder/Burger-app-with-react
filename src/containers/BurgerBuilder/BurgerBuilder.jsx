@@ -1,6 +1,8 @@
 import React from "react";
 import BuildControls from "../../components/Burger/BuildControls/BuildControls";
 import Burger from "../../components/Burger/Burger";
+import OrderSummary from "../../components/Burger/OrderSummary/OrderSummary";
+import Model from "../../components/UI/Model/Model";
 
 const INGREDIENT_PRICES = {
   salad: 0.5,
@@ -17,8 +19,25 @@ class BuilderBurger extends React.Component {
       cheese: 0,
       meat: 0
     },
-    totalPrice: 4
+    totalPrice: 4,
+    purchasable: false
   };
+
+  updatePurchaseState = () => {
+    const ingredients = {
+      ...this.state.ingredients
+    };
+
+    const sum = Object.keys(ingredients)
+      .map(igkey => {
+        return ingredients[igkey];
+      })
+      .reduce((sum, el) => {
+        return sum + el;
+      }, 0);
+
+    this.setState({purchasable: sum > 0});
+  }
 
   addIngredientHandler = type => {
     const oldCount = this.state.ingredients[type];
@@ -27,7 +46,9 @@ class BuilderBurger extends React.Component {
       ...this.state.ingredients,
     };
     updatedIngerdients[type] = updatedCounted;
-    this.setState({ingredients: updatedIngerdients});
+    this.setState({ingredients: updatedIngerdients}, () => {
+      this.updatePurchaseState();
+    });
     const priceAddition = INGREDIENT_PRICES[type];
     const oldPrice = this.state.totalPrice;
     const newPrice = oldPrice + priceAddition;
@@ -44,7 +65,9 @@ class BuilderBurger extends React.Component {
       ...this.state.ingredients,
     };
     updatedIngerdients[type] = updatedCounted;
-    this.setState({ingredients: updatedIngerdients});
+    this.setState({ingredients: updatedIngerdients}, () => {
+      this.updatePurchaseState();
+    });
     const priceDeduction = INGREDIENT_PRICES[type];
     const oldPrice = this.state.totalPrice;
     const newPrice = oldPrice - priceDeduction;
@@ -52,7 +75,7 @@ class BuilderBurger extends React.Component {
   }
 
   render() {
-    const {ingredients} = this.state;
+    const {ingredients, totalPrice, purchasable} = this.state;
     const disabledInfo = {
       ...this.state.ingredients
     };
@@ -63,12 +86,16 @@ class BuilderBurger extends React.Component {
 
     return (
       <>
+        <Model>
+          <OrderSummary ingredients={ingredients} />
+        </Model>
         <Burger ingredients={ingredients} />
         <BuildControls
           ingredientAdded={this.addIngredientHandler}
           ingredientRemoved={this.removeIngredientHandler}
           disabled={disabledInfo}
-        />
+          price={totalPrice}
+          purchasable={purchasable} />
       </>
     );
   }
